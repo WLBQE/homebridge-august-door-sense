@@ -1,4 +1,8 @@
 # Change Log
+## [2.0.3] - 2022-04-02
+### Changes
+- Update Node version requirement.
+
 ## [2.0.2] - 2022-04-02
 ### Changes
 - Minor security-related precautions.
