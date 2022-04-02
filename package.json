@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge August DoorSense",
   "name": "homebridge-august-door-sense",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Homebridge Plugin for August DoorSense.",
   "license": "Apache-2.0",
   "repository": {
@@ -12,7 +12,7 @@
     "url": "https://github.com/WLBQE/homebridge-august-door-sense/issues"
   },
   "engines": {
-    "node": ">=4.0.0",
+    "node": ">=7.0.0",
     "homebridge": ">=1.0.0"
   },
   "main": "dist/index.js",
@@ -28,6 +28,7 @@
   ],
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.17.0",
+    "@typescript-eslint/parser": "^5.17.0",
     "eslint": "^8.12.0",
     "homebridge": "^1.4.0",
     "homebridge-config-ui-x": "^4.42.0",
