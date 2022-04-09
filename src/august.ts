@@ -16,7 +16,9 @@ export type AugustLock = {
 };
 
 export enum AugustDoorStatus {
-  CLOSED, OPEN, UNKNOWN,
+  UNKNOWN = 0,
+  CLOSED = 1,
+  OPEN = 2,
 }
 
 export type AugustSession = {
@@ -235,7 +237,7 @@ export async function augustGetDoorStatus(session: AugustSession, lockId: string
     } else if (status === 'kAugDoorState_Open') {
       return AugustDoorStatus.OPEN;
     } else if (!status) {
-      log.info(`Door status for lock ${lockId} unknown. Is DoorSense enabled for the device?`);
+      log.info(`Door status for lock ${lockId} unknown. Exclude this device in the config if DoorSense isn't enabled.`);
       return AugustDoorStatus.UNKNOWN;
     } else {
       throw new Error(`Unknown door status: ${status}`);

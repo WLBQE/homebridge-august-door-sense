@@ -1,16 +1,16 @@
-import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue, HAPStatus } from 'homebridge';
 import { augustGetDoorStatus, AugustLock, AugustDoorStatus} from './august';
 
 import { AugustSmartLockPlatform } from './platform';
 
 export class AugustSmartLockAccessory {
   private service: Service;
+  private currentStatus: AugustDoorStatus;
 
   constructor(
     private readonly platform: AugustSmartLockPlatform,
     private readonly accessory: PlatformAccessory,
   ) {
-
     const lock: AugustLock = accessory.context.device;
 
     // set accessory information
@@ -21,6 +21,8 @@ export class AugustSmartLockAccessory {
 
     this.service = this.addContactSensorService();
     this.service.setCharacteristic(this.platform.Characteristic.Name, lock.name);
+
+    this.currentStatus = AugustDoorStatus.UNKNOWN;
 
     setInterval(this.updateStatus.bind(this), (this.platform.config['refreshInterval'] || 10) * 1000);
   }
@@ -38,8 +40,14 @@ export class AugustSmartLockAccessory {
   async getOn(): Promise<CharacteristicValue> {
     // run status update in the background to avoid blocking the main thread
     setImmediate(this.updateStatus.bind(this));
-    return this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState).value
-      || this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED;
+    switch(this.currentStatus) {
+      case AugustDoorStatus.CLOSED:
+        return this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED;
+      case AugustDoorStatus.OPEN:
+        return this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+      default:
+        throw new this.platform.api.hap.HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
   }
 
   async updateStatus() {
@@ -47,12 +55,20 @@ export class AugustSmartLockAccessory {
 
     augustGetDoorStatus(this.platform.Session!, id, this.platform.log).then((status) => {
       this.platform.log.debug('Get Door Status ->', status);
+      this.currentStatus = status;
 
-      const currentState = status === AugustDoorStatus.OPEN
-        ? this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED
-        : this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED;
-
-      this.service.updateCharacteristic(this.platform.Characteristic.ContactSensorState, currentState);
+      switch(status) {
+        case AugustDoorStatus.CLOSED:
+          this.service.updateCharacteristic(
+            this.platform.Characteristic.ContactSensorState, this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED);
+          break;
+        case AugustDoorStatus.OPEN:
+          this.service.updateCharacteristic(
+            this.platform.Characteristic.ContactSensorState, this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
+          break;
+        default:
+          // no-op
+      }
     }).catch((error) => {
       this.platform.log.error('GetDoorStatus threw an error:\n', error);
     });

@@ -1,4 +1,8 @@
 # Change Log
+## [2.1.0] - 2022-04-09
+### Changes
+- "No Response" is now shown if the door status can't be fetched.
+
 ## [2.0.3] - 2022-04-02
 ### Changes
 - Update Node version requirement.
