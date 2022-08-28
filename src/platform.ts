@@ -33,7 +33,6 @@ export class AugustSmartLockPlatform implements DynamicPlatformPlugin {
   }
 
   async discoverDevices() {
-
     const options: AugustSessionOptions = {
       uuid: this.config['installId'],
       idType: this.config['phone'] ? 'phone' : 'email',

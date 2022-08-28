@@ -41,6 +41,11 @@ type AugustResponse = {
   payload: object;
 };
 
+type AugustStatus = {
+  doorStatus: AugustDoorStatus;
+  serialNumber?: string;
+};
+
 export async function augustStartSession(options: AugustSessionOptions, log: Logger): Promise<AugustSession> {
   const { uuid, code, idType, password, identifier } = options;
   const session = await augustLogin(uuid, idType, identifier, password, log);
@@ -225,24 +230,37 @@ export async function augustGetLocks(session: AugustSession, log: Logger): Promi
   }
 }
 
-export async function augustGetDoorStatus(session: AugustSession, lockId: string, log: Logger): Promise<AugustDoorStatus> {
+export async function augustGetDoorStatus(session: AugustSession, lockId: string, log: Logger): Promise<AugustStatus> {
   const options = addToken(getRequestOptions(`/remoteoperate/${lockId}/status`, 'PUT'), session.token);
 
   const results = await makeRequest(options, new Uint8Array(), log);
 
   if (results.status === 200 && results.payload) {
     const status = results.payload['doorState'];
+    const serialNumber = results.payload['info']?.['serialNumber'];
     if (status === 'kAugDoorState_Closed') {
-      return AugustDoorStatus.CLOSED;
+      return {doorStatus: AugustDoorStatus.CLOSED, serialNumber: serialNumber};
     } else if (status === 'kAugDoorState_Open') {
-      return AugustDoorStatus.OPEN;
+      return {doorStatus: AugustDoorStatus.OPEN, serialNumber: serialNumber};
     } else if (!status) {
       log.info(`Door status for lock ${lockId} unknown. Exclude this device in the config if DoorSense isn't enabled.`);
-      return AugustDoorStatus.UNKNOWN;
+      return {doorStatus: AugustDoorStatus.UNKNOWN, serialNumber: serialNumber};
     } else {
       throw new Error(`Unknown door status: ${status}`);
     }
   } else {
-    return AugustDoorStatus.UNKNOWN;
+    return {doorStatus: AugustDoorStatus.UNKNOWN};
+  }
+}
+
+export async function augustGetSerialNumber(session: AugustSession, lockId: string, log: Logger): Promise<string> {
+  const options = addToken(getRequestOptions(`/remoteoperate/${lockId}/status`, 'PUT'), session.token);
+
+  const results = await makeRequest(options, new Uint8Array(), log);
+
+  if (results.status === 200 && results.payload) {
+    return results.payload['serialNumber'];
+  } else {
+    return '';
   }
 }

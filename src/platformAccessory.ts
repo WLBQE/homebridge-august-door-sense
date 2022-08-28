@@ -5,6 +5,7 @@ import { AugustSmartLockPlatform } from './platform';
 
 export class AugustSmartLockAccessory {
   private service: Service;
+  private infoService: Service;
   private currentStatus: AugustDoorStatus;
 
   constructor(
@@ -14,10 +15,13 @@ export class AugustSmartLockAccessory {
     const lock: AugustLock = accessory.context.device;
 
     // set accessory information
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
+    this.infoService = this.accessory.getService(this.platform.Service.AccessoryInformation)!;
+    this.infoService
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'August')
-      .setCharacteristic(this.platform.Characteristic.Model, 'DoorSense')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, lock.id);
+      .setCharacteristic(this.platform.Characteristic.Model, 'DoorSense');
+    if (!this.infoService.getCharacteristic(this.platform.Characteristic.SerialNumber).value) {
+      this.infoService.setCharacteristic(this.platform.Characteristic.SerialNumber, lock.id);
+    }
 
     this.service = this.addContactSensorService();
     this.service.setCharacteristic(this.platform.Characteristic.Name, lock.name);
@@ -55,9 +59,14 @@ export class AugustSmartLockAccessory {
 
     augustGetDoorStatus(this.platform.Session!, id, this.platform.log).then((status) => {
       this.platform.log.debug('Get Door Status ->', status);
-      this.currentStatus = status;
+      this.currentStatus = status.doorStatus;
 
-      switch(status) {
+      if (status.serialNumber && this.infoService.getCharacteristic(this.platform.Characteristic.SerialNumber).value === id) {
+        this.infoService.updateCharacteristic(this.platform.Characteristic.SerialNumber, status.serialNumber);
+        this.platform.log.debug(`Updating serial number for lock ${id}: ${status.serialNumber}`);
+      }
+
+      switch(status.doorStatus) {
         case AugustDoorStatus.CLOSED:
           this.service.updateCharacteristic(
             this.platform.Characteristic.ContactSensorState, this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED);

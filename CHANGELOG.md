@@ -1,4 +1,9 @@
 # Change Log
+## [2.2.0] - 2022-08-28
+### Changes
+- Use the real serial number instead of lock ID for the SerialNumber accessory information.
+- Dev dependencies updates.
+
 ## [2.1.0] - 2022-04-09
 ### Changes
 - "No Response" is now shown if the door status can't be fetched.
