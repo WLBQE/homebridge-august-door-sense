@@ -1,4 +1,8 @@
 # Change Log
+## [2.2.1] - 2022-09-04
+### Changes
+- Minor code style updates.
+
 ## [2.2.0] - 2022-08-28
 ### Changes
 - Use the real serial number instead of lock ID for the SerialNumber accessory information.
