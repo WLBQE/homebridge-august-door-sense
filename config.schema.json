@@ -44,6 +44,7 @@
         "filter": {
         "title": "Lock Filter",
         "type": "string",
+        "description": "Comma separated list of IDs of devices without DoorSense.",
         "required": false
       },
         "refreshInterval": {

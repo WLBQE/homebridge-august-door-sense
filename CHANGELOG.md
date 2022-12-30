@@ -1,4 +1,9 @@
 # Change Log
+## [2.2.2] - 2022-12-30
+### Changes
+- Added descrition for the "filter" config.
+- Minor housekeeping.
+
 ## [2.2.1] - 2022-09-04
 ### Changes
 - Minor code style updates.
