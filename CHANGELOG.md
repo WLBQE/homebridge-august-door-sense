@@ -1,4 +1,9 @@
 # Change Log
+## [2.3.0] - 2023-01-01
+### Changes
+- Updated config schema.
+- Minor quality improvements.
+
 ## [2.2.2] - 2022-12-30
 ### Changes
 - Added descrition for the "filter" config.

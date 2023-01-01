@@ -2,6 +2,7 @@
   "pluginAlias": "AugustDoorSense",
   "pluginType": "platform",
   "singular": true,
+  "headerDisplay": "**IMPORTANT:** please check this [README](https://github.com/WLBQE/homebridge-august-door-sense/blob/master/README.md) before proceeding.",
   "schema": {
     "type": "object",
     "properties": {
@@ -11,46 +12,85 @@
         "required": true,
         "default": "August DoorSense"
       },
-      "email": {
-        "title": "Email",
+      "id": {
+        "title": "August ID",
         "type": "string",
+        "description": "The login ID for your August account (email or phone).",
         "required": true
       },
-        "phone": {
-        "title": "Phone",
+      "idType": {
+        "title": "ID Type",
         "type": "string",
-        "required": false
+        "oneOf": [
+          {
+            "title": "Email",
+            "enum": [
+              "email"
+            ]
+          },
+          {
+            "title": "Phone",
+            "enum": [
+              "phone"
+            ]
+          }
+        ],
+        "description": "Type of your August ID.",
+        "required": true
       },
-        "password": {
+      "password": {
         "title": "Password",
         "type": "string",
+        "x-schema-form": {
+          "type": "password"
+        },
+        "description": "The password of your August account.",
         "required": true
       },
-        "code": {
+      "installId": {
+        "title": "Installation ID",
+        "type": "string",
+        "description": "A unique, static UUID. Check README for details.",
+        "required": true
+      },
+      "code": {
         "title": "2FA Code",
         "type": "string",
         "required": false
       },
-        "securityToken": {
-        "title": "Security Token",
-        "type": "string",
-        "required": false
-      },
-        "installId": {
-        "title": "Installation ID",
-        "type": "string",
-        "required": true
-      },
-        "filter": {
+      "filter": {
         "title": "Lock Filter",
         "type": "string",
-        "description": "Comma separated list of IDs of devices without DoorSense.",
+        "description": "IDs of devices you want to exclude. Check README for details.",
         "required": false
       },
-        "refreshInterval": {
-        "title": "Refresh Interval (seconds)",
+      "refreshInterval": {
+        "title": "Refresh Interval",
         "type": "number",
+        "description": "Refresh interval in seconds.",
         "required": false
+      },
+      "securityToken": {
+        "title": "API Key",
+        "type": "string",
+        "description": "Custom API key (optional).",
+        "required": false
+      },
+      "email": {
+        "title": "Email (for backward compatibility only)",
+        "type": "string",
+        "required": false,
+        "condition": {
+          "functionBody": "return false;"
+        }
+      },
+      "phone": {
+        "title": "Phone (for backward compatibility only)",
+        "type": "string",
+        "required": false,
+        "condition": {
+          "functionBody": "return false;"
+        }
       }
     }
   }

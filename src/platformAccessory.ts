@@ -1,5 +1,5 @@
 import { Service, PlatformAccessory, CharacteristicValue, HAPStatus } from 'homebridge';
-import { augustGetDoorStatus, AugustLock, AugustDoorStatus} from './august';
+import { augustGetDoorStatus, AugustLock, AugustDoorStatus } from './august';
 
 import { AugustSmartLockPlatform } from './platform';
 
@@ -44,7 +44,7 @@ export class AugustSmartLockAccessory {
   async getOn(): Promise<CharacteristicValue> {
     // run status update in the background to avoid blocking the main thread
     setImmediate(this.updateStatus.bind(this));
-    switch(this.currentStatus) {
+    switch (this.currentStatus) {
       case AugustDoorStatus.CLOSED:
         return this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED;
       case AugustDoorStatus.OPEN:
@@ -61,12 +61,13 @@ export class AugustSmartLockAccessory {
       this.platform.log.debug('Get Door Status ->', status);
       this.currentStatus = status.doorStatus;
 
-      if (status.serialNumber && this.infoService.getCharacteristic(this.platform.Characteristic.SerialNumber).value === id) {
+      if (status.serialNumber
+        && this.infoService.getCharacteristic(this.platform.Characteristic.SerialNumber).value !== status.serialNumber) {
         this.infoService.updateCharacteristic(this.platform.Characteristic.SerialNumber, status.serialNumber);
         this.platform.log.debug(`Updating serial number for lock ${id}: ${status.serialNumber}`);
       }
 
-      switch(status.doorStatus) {
+      switch (status.doorStatus) {
         case AugustDoorStatus.CLOSED:
           this.service.updateCharacteristic(
             this.platform.Characteristic.ContactSensorState, this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED);
@@ -76,7 +77,7 @@ export class AugustSmartLockAccessory {
             this.platform.Characteristic.ContactSensorState, this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
           break;
         default:
-          // no-op
+          break;
       }
     }).catch((error) => {
       this.platform.log.error('GetDoorStatus threw an error:\n', error);

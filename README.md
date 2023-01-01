@@ -4,54 +4,47 @@
 
 # Homebridge August DoorSense Plugin
 
-This is a homebridge plugin that solely supports August DoorSense door sensors. It could be used in combination with native HomeKit locks or other August Smart Locks plugins.
+This is a homebridge plugin that solely supports August DoorSense door sensors. It can be used in combination with native HomeKit locks or
+other August Homebridge plugins.
 
-This plugin is based on [homebridge-august-locks](https://github.com/nnance/homebridge-august-locks).
+This plugin is originally based on [homebridge-august-locks](https://github.com/nnance/homebridge-august-locks).
 
 ## Installation
 
-Please install the plugin with the following command:
+This plugin can be installed from the [Homebridge UI](https://github.com/oznu/homebridge-config-ui-x) by searching for "August DoorSense".
 
-```
+Alternatively, it can be installed with the following command:
+
+```sh
 npm install -g homebridge-august-door-sense
 ```
 
-or use the Homebridge Web Interface to setup the Plugin by searching for 'august'
-
 ## Configuration
 
-```json
-{
-    "platforms": [
-        {
-            "platform": "AugustDoorSense",
-            "email": "<YOUR-EMAIL-ADDRESS>",
-            "phone": "<YOUR-PHONE-NUMBER>",
-            "password": "<YOUR-PASSWORD>",
-            "code": "<2FA-CODE>",
-            "installId": "<RANDOM-STATIC-STRING>",
-            "filter": "<lockId>[,<lockId>,...]",
-            "securityToken": "<AUGUSTS-API-KEY>",
-        }
-    ]
-}
-```
-### Required Fields:
+It is highly recommended to configure the plugin with the [Homebridge UI](https://github.com/oznu/homebridge-config-ui-x).
 
-**email**: The email address of your August account.
+### Required Fields
 
-**phone**: The phone number associated with your August account (e.g +123456789). Specify phone or email, not both. 
+- **August ID**: The login ID of your August account. Can be either email or phone.
 
-**password**: The password of your August account.
+- **ID Type**: Type of the August ID.
 
-**code**: The 6 digit 2 factor authentication code August emails you when the plugin authenticates with August's API. When first setting this up you should configure all other required fields, restart homebridge, wait for the email from August, enter the 6 digit code into this configuration and then restart homebridge one last time. Subsequent restarts should remember your authenticated, however you may still receive an email when the homebridge restarts or the plugin encounters an error, you can safely ignore the subsequent emails from August.
+- **Password**: The password of your August account.
 
-**installId**: A random string used to identify this homebridge instance as an authorized application to your August Account. It needs to be random and unique and you should never change it or you will have to reauthenticate with the 2FA Code.  This is used to prevent unauthorized access to your August account.  You can generate a random string at https://www.guidgenerator.com.
+- **Installation ID**: A random string used to identify this homebridge instance as an authorized application to your August account. It needs
+to be random and unique and you should never change it or you will have to reauthenticate with the 2FA Code. This is used to prevent
+unauthorized access to your August account.  You can generate a random string [here](https://www.guidgenerator.com).
 
-### Optional Fields:
+- **2FA Code**: The 6-digit 2-factor authentication code from August when the plugin authenticates with the August API. Upon the initial
+setup, you should configure all other required fields, restart homebridge, wait for an email from August, enter the 6-digit code into this
+configuration and then restart homebridge one last time. This won't be required for subsequent restarts. However, in the rare case when this
+plugin is dormant for an extended period, you may have to reauthenticate with a new 2-factor authentication code.
 
-**filter**: Comma separated string of all the Lock ID's you don't want to show in Homekit. These are shown in the log of homebridge after the home and name of the lock is printed out on the prior long entry. you can use this to hide august locks in your august account you don't want to be part of the homebridge setup for example: (multiple homes).
+### Optional Fields
 
-**securityToken**: Augusts API Key, currently pulled from a decompiled apk of the August Android App, August may change this api key as they so wish to. Use this property to update it if you follow a procedure to obtain the current api key for Augusts API Server.
+- **Lock Filter**: Comma separated list of IDs of locks you want this plugin to ignore. If any device on your August account doesn't have
+DoorSense installed, please include its ID here. The lock ID can be found in Homebridge logs.
 
-**refreshInterval**: duration in seconds that the plugin will poll the API for status changes to keep the lock current when there isn't any major state changes
+- **Refresh Interval**: Duration in seconds that the plugin will poll the API for status updates.
+
+- **API Key**: This plugin uses an API key pulled from the August Android app. If you wish to use your own API key, you can put it here.

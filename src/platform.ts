@@ -34,9 +34,10 @@ export class AugustSmartLockPlatform implements DynamicPlatformPlugin {
 
   async discoverDevices() {
     const options: AugustSessionOptions = {
+      apiKey: this.config['securityToken'] ?? '7cab4bbd-2693-4fc1-b99b-dec0fb20f9d4',
       uuid: this.config['installId'],
-      idType: this.config['phone'] ? 'phone' : 'email',
-      identifier: this.config['phone'] ? this.config['phone'] : this.config['email'],
+      idType: this.config['idType'] ?? (this.config['phone'] ? 'phone' : 'email'), // backward compatible
+      identifier: this.config['id'] ?? this.config['phone'] ?? this.config['email'], // backward compatible
       password: this.config['password'],
       code: this.config['code'],
     };

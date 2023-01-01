@@ -22,12 +22,14 @@ export enum AugustDoorStatus {
 }
 
 export type AugustSession = {
+  apiKey: string;
   idType: string;
   identifier: string;
   token: string;
 };
 
 export type AugustSessionOptions = {
+  apiKey: string;
   uuid: string;
   idType: string;
   identifier: string;
@@ -47,22 +49,22 @@ type AugustStatus = {
 };
 
 export async function augustStartSession(options: AugustSessionOptions, log: Logger): Promise<AugustSession> {
-  const { uuid, code, idType, password, identifier } = options;
-  const session = await augustLogin(uuid, idType, identifier, password, log);
+  const { code } = options;
+  const session = await augustLogin(options, log);
   log.debug(JSON.stringify(session));
 
-  const {status} = await augustGetMe(session, log);
+  const { status } = await augustGetMe(session, log);
 
   // Session isn't valid yet, so we need to validate it by sending a code
   if (status !== 200) {
-    if (code === undefined || code.length === 0) {
+    if (!code) {
       await augustSendCode(session, log);
-      log.info('Session is not valid yet, but no code was provided. Please provide a code.');
+      log.info('Session is not valid yet, but no 2FA code was provided. Please provide a 2FA code.');
     } else {
       const resp = await augustValidateCode(code, session, log);
       if (resp.status !== 200) {
         await augustSendCode(session, log);
-        log.error(`Invalid code: ${resp.status}, new code sent, please provide the new code.`);
+        log.error(`Invalid code: ${resp.status}, new code sent, please provide the new 2FA code.`);
       } else {
         session.token = resp.token;
       }
@@ -72,15 +74,15 @@ export async function augustStartSession(options: AugustSessionOptions, log: Log
   return session;
 }
 
-function getRequestOptions(path: string, method: string): RequestOptions {
+function getRequestOptions(apiKey: string, path: string, method: string): RequestOptions {
   return {
     hostname: 'api-production.august.com',
     port: 443,
     path: path,
     method: method,
     headers: {
-      'x-august-api-key': '7cab4bbd-2693-4fc1-b99b-dec0fb20f9d4',
-      'x-kease-api-key': '7cab4bbd-2693-4fc1-b99b-dec0fb20f9d4',
+      'x-august-api-key': apiKey,
+      'x-kease-api-key': apiKey,
       'Content-Type': 'application/json',
       'Accept-Version': '0.0.1',
       'User-Agent': 'August/Luna-3.2.2',
@@ -88,7 +90,7 @@ function getRequestOptions(path: string, method: string): RequestOptions {
   };
 }
 
-function addToken(options: RequestOptions, token:string): RequestOptions {
+function addToken(options: RequestOptions, token: string): RequestOptions {
   const newOptions = {
     ...options,
   };
@@ -138,7 +140,9 @@ async function makeRequest(options: RequestOptions, data: Uint8Array, log: Logge
   });
 }
 
-async function augustLogin(uuid: string, idType: string, identifier: string, password: string, log: Logger): Promise<AugustSession> {
+async function augustLogin(sessionOptions: AugustSessionOptions, log: Logger): Promise<AugustSession> {
+  const { apiKey, uuid, idType, password, identifier } = sessionOptions;
+
   const data = new TextEncoder().encode(
     JSON.stringify({
       identifier: `${idType}:${identifier}`,
@@ -147,13 +151,14 @@ async function augustLogin(uuid: string, idType: string, identifier: string, pas
     }),
   );
 
-  const options = getRequestOptions('/session', 'POST');
+  const RequestOptions = getRequestOptions(apiKey, '/session', 'POST');
 
-  const res = await makeRequest(options, data, log);
-  if (res.status !== 200 || res.payload['userId'] === undefined || res.payload['userId'].length === 0) {
+  const res = await makeRequest(RequestOptions, data, log);
+  if (res.status !== 200 || !res.payload['userId']) {
     throw new Error(`Invalid user credentials: ${res.status}`);
   } else {
     return {
+      apiKey: apiKey,
       idType: idType,
       identifier: identifier,
       token: res.token,
@@ -162,7 +167,7 @@ async function augustLogin(uuid: string, idType: string, identifier: string, pas
 }
 
 async function augustGetMe(session: AugustSession, log: Logger): Promise<AugustResponse> {
-  const options = addToken(getRequestOptions('/users/me', 'GET'), session.token);
+  const options = addToken(getRequestOptions(session.apiKey, '/users/me', 'GET'), session.token);
 
   return makeRequest(options, new TextEncoder().encode(''), log);
 }
@@ -174,7 +179,7 @@ async function augustSendCode(session: AugustSession, log: Logger): Promise<Augu
     }),
   );
 
-  const options = addToken(getRequestOptions(`/validation/${session.idType}`, 'POST'), session.token);
+  const options = addToken(getRequestOptions(session.apiKey, `/validation/${session.idType}`, 'POST'), session.token);
 
   return makeRequest(options, data, log);
 }
@@ -187,13 +192,13 @@ async function augustValidateCode(code: string, session: AugustSession, log: Log
 
   const data = new TextEncoder().encode(JSON.stringify(payload));
 
-  const options = addToken(getRequestOptions(`/validate/${session.idType}`, 'POST'), session.token);
+  const options = addToken(getRequestOptions(session.apiKey, `/validate/${session.idType}`, 'POST'), session.token);
 
   return makeRequest(options, data, log);
 }
 
 export async function augustGetHouses(session: AugustSession, log: Logger): Promise<AugustHome[]> {
-  const options = addToken(getRequestOptions('/users/houses/mine', 'GET'), session.token);
+  const options = addToken(getRequestOptions(session.apiKey, '/users/houses/mine', 'GET'), session.token);
 
   const results = await makeRequest(options, new Uint8Array(), log);
 
@@ -209,7 +214,7 @@ export async function augustGetHouses(session: AugustSession, log: Logger): Prom
 }
 
 export async function augustGetLocks(session: AugustSession, log: Logger): Promise<AugustLock[]> {
-  const options = addToken(getRequestOptions('/users/locks/mine', 'GET'), session.token);
+  const options = addToken(getRequestOptions(session.apiKey, '/users/locks/mine', 'GET'), session.token);
 
   const results = await makeRequest(options, new Uint8Array(), log);
 
@@ -231,7 +236,7 @@ export async function augustGetLocks(session: AugustSession, log: Logger): Promi
 }
 
 export async function augustGetDoorStatus(session: AugustSession, lockId: string, log: Logger): Promise<AugustStatus> {
-  const options = addToken(getRequestOptions(`/remoteoperate/${lockId}/status`, 'PUT'), session.token);
+  const options = addToken(getRequestOptions(session.apiKey, `/remoteoperate/${lockId}/status`, 'PUT'), session.token);
 
   const results = await makeRequest(options, new Uint8Array(), log);
 
@@ -239,22 +244,22 @@ export async function augustGetDoorStatus(session: AugustSession, lockId: string
     const status = results.payload['doorState'];
     const serialNumber = results.payload['info']?.['serialNumber'];
     if (status === 'kAugDoorState_Closed') {
-      return {doorStatus: AugustDoorStatus.CLOSED, serialNumber: serialNumber};
+      return { doorStatus: AugustDoorStatus.CLOSED, serialNumber: serialNumber };
     } else if (status === 'kAugDoorState_Open') {
-      return {doorStatus: AugustDoorStatus.OPEN, serialNumber: serialNumber};
+      return { doorStatus: AugustDoorStatus.OPEN, serialNumber: serialNumber };
     } else if (!status) {
       log.info(`Door status for lock ${lockId} unknown. Exclude this device in the config if DoorSense isn't enabled.`);
-      return {doorStatus: AugustDoorStatus.UNKNOWN, serialNumber: serialNumber};
+      return { doorStatus: AugustDoorStatus.UNKNOWN, serialNumber: serialNumber };
     } else {
       throw new Error(`Unknown door status: ${status}`);
     }
   } else {
-    return {doorStatus: AugustDoorStatus.UNKNOWN};
+    return { doorStatus: AugustDoorStatus.UNKNOWN };
   }
 }
 
 export async function augustGetSerialNumber(session: AugustSession, lockId: string, log: Logger): Promise<string> {
-  const options = addToken(getRequestOptions(`/remoteoperate/${lockId}/status`, 'PUT'), session.token);
+  const options = addToken(getRequestOptions(session.apiKey, `/remoteoperate/${lockId}/status`, 'PUT'), session.token);
 
   const results = await makeRequest(options, new Uint8Array(), log);
 
