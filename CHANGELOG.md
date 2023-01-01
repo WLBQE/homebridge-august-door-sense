@@ -1,4 +1,8 @@
 # Change Log
+## [2.3.1] - 2023-01-01
+### Changes
+- Dev housekeeping.
+
 ## [2.3.0] - 2023-01-01
 ### Changes
 - Updated config schema.

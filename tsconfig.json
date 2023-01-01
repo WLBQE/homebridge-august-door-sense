@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2018", // ~node10
+    "target": "ES2019", // ~node12
     "module": "commonjs",
     "lib": [
-      "es2015",
-      "es2016",
-      "es2017",
-      "es2018"
+      "es2019",
+      "es2020.promise",
+      "es2020.bigint",
+      "es2020.string"
     ],
     "declaration": true,
     "declarationMap": true,
