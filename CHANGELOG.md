@@ -1,6 +1,11 @@
 # Change Log
-## [2.3.1] - 2023-01-01
+## [2.3.2] - 2023-05-07
 ### Changes
+- Fixed a bug that occasionally leads to JSON parsing errors.
+- Ended support for NodeJS 12.x and 13.x.
+
+## [2.3.1] - 2023-01-01
+### Cha+nges
 - Dev housekeeping.
 
 ## [2.3.0] - 2023-01-01

@@ -74,8 +74,8 @@ export async function augustStartSession(options: AugustSessionOptions, log: Log
   return session;
 }
 
-function getRequestOptions(apiKey: string, path: string, method: string): RequestOptions {
-  return {
+function getRequestOptions(apiKey: string, path: string, method: string, session?: AugustSession): RequestOptions {
+  const options = {
     hostname: 'api-production.august.com',
     port: 443,
     path: path,
@@ -88,23 +88,17 @@ function getRequestOptions(apiKey: string, path: string, method: string): Reques
       'User-Agent': 'August/Luna-3.2.2',
     },
   };
-}
-
-function addToken(options: RequestOptions, token: string): RequestOptions {
-  const newOptions = {
-    ...options,
-  };
-
-  if (newOptions['headers']) {
-    newOptions['headers']['x-august-access-token'] = token;
+  if (session) {
+    options['headers']['x-august-access-token'] = session.token;
   }
-
-  return newOptions;
+  return options;
 }
 
 async function makeRequest(options: RequestOptions, data: Uint8Array, log: Logger): Promise<AugustResponse> {
   return new Promise((resolve) => {
     const req = request(options, res => {
+      const chunks: Array<string> = [];
+
       res.on('data', d => {
         log.debug(`statusCode: ${res.statusCode}`);
 
@@ -112,15 +106,20 @@ async function makeRequest(options: RequestOptions, data: Uint8Array, log: Logge
         const buffStr = buff.toString('utf8');
         log.debug(buffStr);
 
+        chunks.push(buffStr);
+      });
+
+      res.on('end', () => {
+        const msg = chunks.join();
         let payload;
         if (res.statusCode === 200) {
           try {
-            payload = JSON.parse(buffStr);
+            payload = JSON.parse(msg);
           } catch (error) {
-            log.error(`Error parsing JSON: ${buffStr}`);
+            log.error(`Error parsing JSON: ${msg}`);
           }
         } else {
-          log.debug(`Received non-200 HTTP response ${res.statusCode}:\n${buffStr}`);
+          log.debug(`Received non-200 HTTP response ${res.statusCode}:\n${msg}`);
         }
 
         resolve({
@@ -151,9 +150,8 @@ async function augustLogin(sessionOptions: AugustSessionOptions, log: Logger): P
     }),
   );
 
-  const RequestOptions = getRequestOptions(apiKey, '/session', 'POST');
-
-  const res = await makeRequest(RequestOptions, data, log);
+  const requestOptions = getRequestOptions(apiKey, '/session', 'POST');
+  const res = await makeRequest(requestOptions, data, log);
   if (res.status !== 200 || !res.payload['userId']) {
     throw new Error(`Invalid user credentials: ${res.status}`);
   } else {
@@ -167,9 +165,8 @@ async function augustLogin(sessionOptions: AugustSessionOptions, log: Logger): P
 }
 
 async function augustGetMe(session: AugustSession, log: Logger): Promise<AugustResponse> {
-  const options = addToken(getRequestOptions(session.apiKey, '/users/me', 'GET'), session.token);
-
-  return makeRequest(options, new TextEncoder().encode(''), log);
+  const options = getRequestOptions(session.apiKey, '/users/me', 'GET', session);
+  return makeRequest(options, new Uint8Array(), log);
 }
 
 async function augustSendCode(session: AugustSession, log: Logger): Promise<AugustResponse> {
@@ -179,8 +176,7 @@ async function augustSendCode(session: AugustSession, log: Logger): Promise<Augu
     }),
   );
 
-  const options = addToken(getRequestOptions(session.apiKey, `/validation/${session.idType}`, 'POST'), session.token);
-
+  const options = getRequestOptions(session.apiKey, `/validation/${session.idType}`, 'POST', session);
   return makeRequest(options, data, log);
 }
 
@@ -192,14 +188,12 @@ async function augustValidateCode(code: string, session: AugustSession, log: Log
 
   const data = new TextEncoder().encode(JSON.stringify(payload));
 
-  const options = addToken(getRequestOptions(session.apiKey, `/validate/${session.idType}`, 'POST'), session.token);
-
+  const options = getRequestOptions(session.apiKey, `/validate/${session.idType}`, 'POST', session);
   return makeRequest(options, data, log);
 }
 
 export async function augustGetHouses(session: AugustSession, log: Logger): Promise<AugustHome[]> {
-  const options = addToken(getRequestOptions(session.apiKey, '/users/houses/mine', 'GET'), session.token);
-
+  const options = getRequestOptions(session.apiKey, '/users/houses/mine', 'GET', session);
   const results = await makeRequest(options, new Uint8Array(), log);
 
   if (results.status === 200 && Array.isArray(results.payload)) {
@@ -214,7 +208,7 @@ export async function augustGetHouses(session: AugustSession, log: Logger): Prom
 }
 
 export async function augustGetLocks(session: AugustSession, log: Logger): Promise<AugustLock[]> {
-  const options = addToken(getRequestOptions(session.apiKey, '/users/locks/mine', 'GET'), session.token);
+  const options = getRequestOptions(session.apiKey, '/users/locks/mine', 'GET', session);
 
   const results = await makeRequest(options, new Uint8Array(), log);
 
@@ -236,8 +230,7 @@ export async function augustGetLocks(session: AugustSession, log: Logger): Promi
 }
 
 export async function augustGetDoorStatus(session: AugustSession, lockId: string, log: Logger): Promise<AugustStatus> {
-  const options = addToken(getRequestOptions(session.apiKey, `/remoteoperate/${lockId}/status`, 'PUT'), session.token);
-
+  const options = getRequestOptions(session.apiKey, `/remoteoperate/${lockId}/status`, 'PUT', session);
   const results = await makeRequest(options, new Uint8Array(), log);
 
   if (results.status === 200 && results.payload) {
@@ -259,8 +252,7 @@ export async function augustGetDoorStatus(session: AugustSession, lockId: string
 }
 
 export async function augustGetSerialNumber(session: AugustSession, lockId: string, log: Logger): Promise<string> {
-  const options = addToken(getRequestOptions(session.apiKey, `/remoteoperate/${lockId}/status`, 'PUT'), session.token);
-
+  const options = getRequestOptions(session.apiKey, `/remoteoperate/${lockId}/status`, 'PUT', session);
   const results = await makeRequest(options, new Uint8Array(), log);
 
   if (results.status === 200 && results.payload) {

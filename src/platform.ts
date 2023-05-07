@@ -57,7 +57,8 @@ export class AugustSmartLockPlatform implements DynamicPlatformPlugin {
       }).catch(() => {
         this.log.error('Failed to get locks');
       });
-    }).catch(() => {
+    }).catch((e) => {
+      this.log.debug(e);
       this.log.error('Failed to start session, check your config and confirm your password');
     });
   }
