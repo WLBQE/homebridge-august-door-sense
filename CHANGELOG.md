@@ -5,7 +5,7 @@
 - Ended support for NodeJS 12.x and 13.x.
 
 ## [2.3.1] - 2023-01-01
-### Cha+nges
+### Changes
 - Dev housekeeping.
 
 ## [2.3.0] - 2023-01-01
