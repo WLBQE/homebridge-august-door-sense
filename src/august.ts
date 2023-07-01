@@ -240,6 +240,8 @@ export async function augustGetDoorStatus(session: AugustSession, lockId: string
       return { doorStatus: AugustDoorStatus.CLOSED, serialNumber: serialNumber };
     } else if (status === 'kAugDoorState_Open') {
       return { doorStatus: AugustDoorStatus.OPEN, serialNumber: serialNumber };
+    } else if (status === 'kAugDoorState_Init') {
+      return { doorStatus: AugustDoorStatus.UNKNOWN, serialNumber: serialNumber };
     } else if (!status) {
       log.info(`Door status for lock ${lockId} unknown. Exclude this device in the config if DoorSense isn't enabled.`);
       return { doorStatus: AugustDoorStatus.UNKNOWN, serialNumber: serialNumber };

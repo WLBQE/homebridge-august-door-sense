@@ -1,4 +1,8 @@
 # Change Log
+## [2.3.3] - 2023-07-01
+### Changes
+- Correctly handle `kAugDoorState_Init`.
+
 ## [2.3.2] - 2023-05-07
 ### Changes
 - Fixed a bug that occasionally leads to JSON parsing errors.
